@@ -10,7 +10,7 @@ st.title("🏀 NBA Schedule & Projections")
 selected_date = st.date_input("Selecciona la fecha del juego", datetime.now())
 date_str = selected_date.strftime("%Y%m%d")
 
-# --- DICCIONARIO BASE DE DATOS DE EQUIPOS (Pace, ORTG, DRTG) ---
+# --- DICCIONARIO BASE DE DATOS DE EQUIPOS ---
 TEAMS_DATA = {
     "Boston Celtics": {"Pace": 98.5, "ORTG": 118.0, "DRTG": 110.0},
     "Denver Nuggets": {"Pace": 97.2, "ORTG": 116.5, "DRTG": 112.1},
@@ -75,22 +75,20 @@ def get_schedule(date_formatted):
             
             status_text = competition['status']['type']['detail']
             
-            # Extraer Odds (Líneas del casino) de ESPN si están disponibles
+            # Extraer Odds
             odds_data = competition.get('odds', [])
             casino_spread = None
             casino_ou = None
             
             if odds_data:
-                # ESPN suele guardar el spread y el over/under en el primer objeto de odds
                 odds_item = odds_data[0]
                 casino_spread = odds_item.get('spread', None)
                 casino_ou = odds_item.get('overUnder', None)
             
-            # Si la API no trae odds para este juego, usamos valores por defecto (ej. basados en el modelo)
             away_pts, home_pts, total_pts, game_pace, model_spread = calculate_projection(away_team, home_team)
             
             if casino_spread is None:
-                casino_spread = model_spread  # Fallback si el casino aún no publica línea
+                casino_spread = model_spread
             if casino_ou is None:
                 casino_ou = total_pts
             
@@ -130,22 +128,15 @@ else:
     if games:
         for game in games:
             with st.container():
-                # Encabezado con logos y nombres
                 col1, col2, col3, col4, col5 = st.columns([1, 2.5, 1, 2.5, 1])
-                with col1:
-                    st.image(game['VisitanteLogo'], width=45)
-                with col2:
-                    st.markdown(f"**{game['Visitante']}**")
-                with col3:
-                    st.markdown("<h4 style='text-align: center; margin: 0;'>@</h4>", unsafe_allow_html=True)
-                with col4:
-                    st.markdown(f"**{game['Local']}**")
-                with col5:
-                    st.image(game['LocalLogo'], width=45)
+                with col1: st.image(game['VisitanteLogo'], width=45)
+                with col2: st.markdown(f"**{game['Visitante']}**")
+                with col3: st.markdown("<h4 style='text-align: center; margin: 0;'>@</h4>", unsafe_allow_html=True)
+                with col4: st.markdown(f"**{game['Local']}**")
+                with col5: st.image(game['LocalLogo'], width=45)
                 
                 st.caption(f"🕒 Estado: {game['Estado']}")
                 
-                # Métricas de Puntos (Visitante, Local, Total)
                 m1, m2, m3 = st.columns(3)
                 m1.metric(label=f"Proy. {game['Visitante'].split()[-1]}", value=game['ProjAway'])
                 m2.metric(label=f"Proy. {game['Local'].split()[-1]}", value=game['ProjHome'])
@@ -161,28 +152,34 @@ else:
 
                 st.caption(f"⚡ **Ritmo:** {game['ProjPace']} pos | 🎯 **Modelo:** {favorite_text}")
                 
-                # --- MODO COMPARATIVO DE VALOR AUTOMÁTICO ---
+                # --- MODO COMPARATIVO DE VALOR CORREGIDO ---
                 with st.expander("🧮 Comparativa Automática con el Casino"):
                     if not game['HasOdds']:
-                        st.warning("⚠️ ESPN no tiene cuotas oficiales publicadas aún para este partido (usando estimación de respaldo). Puedes verificar la línea en tu casa de apuestas.")
+                        st.warning("⚠️ Sin cuotas oficiales publicadas en ESPN aún.")
                     
-                    st.markdown(f"**Línea detectada del Casino ({game['Local']} Spread):** `{game['CasinoSpread']}`")
+                    st.markdown(f"**Línea detectada del Casino ({game['Local']}):** `{game['CasinoSpread']}`")
                     st.markdown(f"**Línea detectada del Casino (Over/Under):** `{game['CasinoOU']}`")
                     
-                    # Comparativa automática de Spread
-                    diff = game['ProjSpread'] - game['CasinoSpread']
+                    # --- LÓGICA DE VALOR CORREGIDA ---
+                    # Convertimos la línea del casino al margen esperado del local
+                    # Si casino_spread es -3.5, significa que el local debe ganar por +3.5
+                    casino_margin_for_home = -1 * game['CasinoSpread'] if game['CasinoSpread'] < 0 else game['CasinoSpread']
+                    
+                    # Diferencia: Modelo vs Casino
+                    # diff > 0: El modelo le da MÁS ventaja al local que el casino
+                    # diff < 0: El modelo le da MENOS ventaja al local de la que pide el casino
+                    diff = game['ProjSpread'] - casino_margin_for_home
                     
                     st.markdown("---")
                     st.markdown("💡 **Resultado del Análisis de Valor:**")
                     
-                    if abs(diff) < 1.0:
-                        st.info("⚖️ **Línea justa:** El casino está muy alineado con tu modelo.")
-                    elif diff >= 1.0:
-                        st.success(f"🔥 **Valor en el Favorito ({game['Local']}):** Tu modelo proyecta que ganará por un margen mayor al que pide el casino.")
-                    elif diff <= -1.0:
-                        st.success(f"🛡️ **Valor en el Underdog ({game['Visitante']}):** El casino sobrevalora al local; hay colchón a favor del visitante.")
+                    if abs(diff) < 0.8:
+                        st.info("⚖️ **Línea justa:** El casino está muy alineado con la proyección del modelo.")
+                    elif diff > 0.8:
+                        st.success(f"🔥 **Valor en el Favorito ({game['Local']}):** Tu modelo proyecta que ganará por **{game['ProjSpread']}** pts, superando el handicap del casino ({casino_margin_for_home} pts).")
+                    else:
+                        st.success(f"🛡️ **Valor en el Underdog ({game['Visitante']}):** El casino pide demasiado a {game['Local']} ({casino_margin_for_home} pts). Tu modelo proyecta una diferencia de solo **{game['ProjSpread']}** pts (Colchón a favor de {game['Visitante']}).")
                 
                 st.divider()
     else:
         st.info("No hay partidos programados para esta fecha en la NBA.")
-        
