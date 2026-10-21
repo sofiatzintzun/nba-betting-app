@@ -4,33 +4,64 @@ from datetime import datetime
 
 st.set_page_config(page_title="NBA Schedule & Projections", layout="centered")
 
-# --- CSS PERSONALIZADO PARA RESPONSIVIDAD (MÓVILES Y TABLETS) ---
+# --- CSS PERSONALIZADO PARA RESPONSIVIDAD Y CABECERA EN UNA SOLA LÍNEA ---
 st.markdown("""
     <style>
-    /* Estilos generales y adaptación para pantallas móviles */
+    /* Estilos para la cabecera de equipos en una sola línea en móviles */
+    .matchup-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        margin-bottom: 10px;
+    }
+    .team-box {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex: 1;
+    }
+    .team-box.away {
+        justify-content: flex-start;
+    }
+    .team-box.home {
+        justify-content: flex-end;
+    }
+    .team-name {
+        font-weight: bold;
+        font-size: 0.95rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .at-symbol {
+        font-weight: bold;
+        color: #888;
+        padding: 0 8px;
+        font-size: 0.9rem;
+    }
+    
+    /* Adaptaciones para métricas en celulares */
     @media (max-width: 768px) {
+        .team-name {
+            font-size: 0.85rem;
+        }
         .stMetric {
-            background-color: #f0f2f6;
-            padding: 8px;
-            border-radius: 8px;
-            margin-bottom: 5px;
+            background-color: rgba(240, 242, 246, 0.05);
+            padding: 6px;
+            border-radius: 6px;
         }
         h1 {
-            font-size: 1.6rem !important;
-        }
-        h3 {
-            font-size: 1.2rem !important;
-        }
-        .element-container {
-            font-size: 14px;
+            font-size: 1.5rem !important;
         }
     }
-    /* Mejora visual de las tarjetas de partidos */
+
+    /* Tarjetas de partidos */
     div[data-testid="stVerticalBlock"] > div[data-testid="stContainer"] {
         border: 1px solid #e0e0e0;
         border-radius: 12px;
-        padding: 15px;
-        margin-bottom: 15px;
+        padding: 12px;
+        margin-bottom: 12px;
         background-color: rgba(255, 255, 255, 0.02);
     }
     </style>
@@ -187,12 +218,20 @@ else:
     if games:
         for game in games:
             with st.container():
-                col1, col2, col3, col4, col5 = st.columns([1, 2.5, 1, 2.5, 1])
-                with col1: st.image(game['VisitanteLogo'], width=40)
-                with col2: st.markdown(f"**{game['Visitante']}**")
-                with col3: st.markdown("<h4 style='text-align: center; margin: 0;'>@</h4>", unsafe_allow_html=True)
-                with col4: st.markdown(f"**{game['Local']}**")
-                with col5: st.image(game['LocalLogo'], width=40)
+                # --- CABECERA DE EQUIPOS UNIFICADA EN UNA SOLA LÍNEA ---
+                st.markdown(f"""
+                    <div class="matchup-header">
+                        <div class="team-box away">
+                            <img src="{game['VisitanteLogo']}" width="28"/>
+                            <span class="team-name">{game['Visitante']}</span>
+                        </div>
+                        <span class="at-symbol">@</span>
+                        <div class="team-box home">
+                            <span class="team-name">{game['Local']}</span>
+                            <img src="{game['LocalLogo']}" width="28"/>
+                        </div>
+                    </div>
+                """, unsafe_allow_html=True)
                 
                 st.caption(f"🕒 Estado: {game['Estado']}")
                 
