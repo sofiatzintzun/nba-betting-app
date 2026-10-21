@@ -1,15 +1,20 @@
 import streamlit as st
 import requests
+from datetime import datetime
 
 st.set_page_config(page_title="NBA Schedule App", layout="centered")
 
-st.title("🏀 Calendario NBA de Hoy")
+st.title("🏀 Calendario NBA")
 
-# --- FUNCIÓN PARA OBTENER EL CALENDARIO DESDE LA API DE ESPN ---
+# --- SELECTOR DE FECHA ---
+# Te permite elegir qué día quieres consultar (por defecto selecciona hoy)
+selected_date = st.date_input("Selecciona la fecha del juego", datetime.now())
+date_str = selected_date.strftime("%Y%m%d") # Formato que pide ESPN (AAAAMMDD)
+
+# --- FUNCIÓN PARA OBTENER EL CALENDARIO SEGÚN LA FECHA ---
 @st.cache_data(ttl=300)
-def get_todays_schedule():
-    # Endpoint público de la NBA en ESPN (trae los partidos del día actual automáticamente)
-    url = "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard"
+def get_schedule(date_formatted):
+    url = f"https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates={date_formatted}"
     
     try:
         response = requests.get(url, timeout=10)
@@ -25,7 +30,6 @@ def get_todays_schedule():
             competition = event['competitions'][0]
             competitors = competition['competitors']
             
-            # Identificar local y visitante
             home_team = ""
             away_team = ""
             for comp in competitors:
@@ -35,7 +39,6 @@ def get_todays_schedule():
                 else:
                     away_team = team_name
             
-            # Estado del partido (ej. Horario, En vivo, Finalizado)
             status_text = competition['status']['type']['detail']
             
             schedule_list.append({
@@ -54,13 +57,13 @@ if st.button('🔄 Actualizar Calendario'):
     st.cache_data.clear()
 
 # --- CARGA Y RENDERIZADO DE DATOS ---
-result = get_todays_schedule()
+result = get_schedule(date_str)
 
 if isinstance(result, str):
     st.error(result)
 else:
     games = result
-    st.subheader(f"Partidos programados ({len(games)})")
+    st.subheader(f"Partidos del {selected_date.strftime('%d/%m/%Y')} ({len(games)})")
     
     if games:
         for game in games:
@@ -69,4 +72,4 @@ else:
                 st.caption(f"🕒 {game['Estado']}")
                 st.divider()
     else:
-        st.info("No hay partidos programados para hoy en la NBA.")
+        st.info("No hay partidos programados para esta fecha en la NBA.")
