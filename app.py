@@ -1,29 +1,45 @@
 import streamlit as st
 import pandas as pd
-from nba_api.live.nba.endpoints import scoreboard
+import requests
 
-# Configuración inicial de la página optimizada para móvil
 st.set_page_config(page_title="NBA Schedule App", layout="centered")
 
 st.title("🏀 Calendario NBA de Hoy")
 
-# --- FUNCIÓN PARA OBTENER LOS PARTIDOS DEL DÍA ---
-@st.cache_data(ttl=300) # Caché de 5 minutos para evitar peticiones innecesarias
+# --- FUNCIÓN CON HEADERS PERSONALIZADOS PARA EVITAR BLOQUEOS ---
+@st.cache_data(ttl=300)
 def get_todays_schedule():
+    url = "https://stats.nba.com/stats/scoreboardv3"
+    
+    # Headers obligatorios para que la API de la NBA no rechace la conexión desde la nube
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'application/json, text/plain, */*',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Referer': 'https://www.nba.com/',
+        'Origin': 'https://www.nba.com',
+        'Connection': 'keep-alive'
+    }
+    
     try:
-        # Obtenemos el marcador en vivo / calendario de la fecha actual
-        board = scoreboard.ScoreBoard()
-        data = board.get_dict()
+        # Hacemos la petición directa con requests para controlar los headers
+        response = requests.get(url, headers=headers, timeout=10)
         
+        # Verificamos si la petición fue exitosa
+        if response.status_code != 200:
+            return f"Error HTTP {response.status_code}: La NBA bloqueó la solicitud."
+            
+        data = response.json()
+        
+        # Extraemos los juegos del scoreboardv3
         games_raw = data.get('scoreboard', {}).get('games', [])
         
         schedule_list = []
         for game in games_raw:
-            # Extraemos nombres y ciudades de los equipos
             home_team = f"{game['homeTeam']['teamCity']} {game['homeTeam']['teamName']}"
             away_team = f"{game['awayTeam']['teamCity']} {game['awayTeam']['teamName']}"
             
-            # Estado del juego (ej. Hora de inicio, En vivo, Finalizado)
+            # Estado del juego
             status_text = game.get('gameStatusText', '')
             
             schedule_list.append({
@@ -33,25 +49,28 @@ def get_todays_schedule():
             })
             
         return schedule_list
+        
     except Exception as e:
-        st.error(f"Error al conectar con la API de la NBA: {e}")
-        return []
+        return f"Error al procesar los datos: {str(e)}"
 
 # --- BOTÓN DE ACTUALIZACIÓN MANUAL ---
 if st.button('🔄 Actualizar Calendario'):
     st.cache_data.clear()
 
 # --- CARGA Y RENDERIZADO DE DATOS ---
-games = get_todays_schedule()
+result = get_todays_schedule()
 
-if games:
+if isinstance(result, str):
+    st.error(result)
+else:
+    games = result
     st.subheader(f"Partidos programados ({len(games)})")
     
-    # Mostramos los juegos en formato de tarjetas limpias
-    for game in games:
-        with st.container():
-            st.markdown(f"**{game['Visitante']}** @ **{game['Local']}**")
-            st.caption(f"🕒 {game['Estado']}")
-            st.divider()
-else:
-    st.info("No hay partidos programados para hoy o la jornada aún no está disponible.")
+    if games:
+        for game in games:
+            with st.container():
+                st.markdown(f"**{game['Visitante']}** @ **{game['Local']}**")
+                st.caption(f"🕒 {game['Estado']}")
+                st.divider()
+    else:
+        st.info("No hay partidos programados para hoy en la NBA.")
