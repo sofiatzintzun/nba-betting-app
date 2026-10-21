@@ -10,8 +10,7 @@ st.title("🏀 NBA Schedule & Projections")
 selected_date = st.date_input("Selecciona la fecha del juego", datetime.now())
 date_str = selected_date.strftime("%Y%m%d")
 
-# --- DICCIONARIO BASE DE DATO DE EQUIPOS (Pace, ORTG, DRTG) ---
-# Métricas aproximadas/promedio para el modelo
+# --- DICCIONARIO BASE DE DATOS DE EQUIPOS (Pace, ORTG, DRTG) ---
 TEAMS_DATA = {
     "Boston Celtics": {"Pace": 98.5, "ORTG": 118.0, "DRTG": 110.0},
     "Denver Nuggets": {"Pace": 97.2, "ORTG": 116.5, "DRTG": 112.1},
@@ -31,12 +30,12 @@ DEFAULT_STATS = {"Pace": 99.0, "ORTG": 114.5, "DRTG": 114.5}
 LEAGUE_PACE = 99.0
 LEAGUE_PTS_100 = 114.5
 
-# --- FUNCIÓN DE CÁLCULO DE PROYECCIÓN ---
+# --- FUNCIÓN DE CÁLCULO DE PROYECCIÓN (Incluyendo Pace y Spread) ---
 def calculate_projection(away_team, home_team):
     away_stats = TEAMS_DATA.get(away_team, DEFAULT_STATS)
     home_stats = TEAMS_DATA.get(home_team, DEFAULT_STATS)
 
-    # 1. Game Pace
+    # 1. Game Pace Proyectado
     game_pace = (away_stats["Pace"] * home_stats["Pace"]) / LEAGUE_PACE
 
     # 2. Eficiencias Ajustadas
@@ -47,8 +46,11 @@ def calculate_projection(away_team, home_team):
     away_pts = (away_adj_ortg / 100) * game_pace
     home_pts = ((home_adj_ortg / 100) * game_pace) + 2.5
     total_pts = away_pts + home_pts
+    
+    # 4. Spread Proyectado (Diferencia a favor del Local)
+    spread = home_pts - away_pts
 
-    return round(away_pts, 1), round(home_pts, 1), round(total_pts, 1)
+    return round(away_pts, 1), round(home_pts, 1), round(total_pts, 1), round(game_pace, 1), round(spread, 1)
 
 # --- FUNCIÓN PARA OBTENER EL CALENDARIO ---
 @st.cache_data(ttl=300)
@@ -79,8 +81,8 @@ def get_schedule(date_formatted):
             
             status_text = competition['status']['type']['detail']
             
-            # Calculamos la proyección directamente para cada juego
-            away_pts, home_pts, total_pts = calculate_projection(away_team, home_team)
+            # Calculamos todas las métricas del modelo
+            away_pts, home_pts, total_pts, game_pace, spread = calculate_projection(away_team, home_team)
             
             schedule_list.append({
                 "Local": home_team,
@@ -90,7 +92,9 @@ def get_schedule(date_formatted):
                 "Estado": status_text,
                 "ProjAway": away_pts,
                 "ProjHome": home_pts,
-                "ProjTotal": total_pts
+                "ProjTotal": total_pts,
+                "ProjPace": game_pace,
+                "ProjSpread": spread
             })
             
         return schedule_list
@@ -101,7 +105,7 @@ def get_schedule(date_formatted):
 if st.button('🔄 Actualizar Datos'):
     st.cache_data.clear()
 
-# --- RENDERIZADO DE PARTIDOS CON PROYECCIONES INTEGRADAS ---
+# --- RENDERIZADO DE PARTIDOS ---
 result = get_schedule(date_str)
 
 if isinstance(result, str):
@@ -113,7 +117,7 @@ else:
     if games:
         for game in games:
             with st.container():
-                # Encabezado del partido con logos y nombres
+                # Encabezado con logos y nombres
                 col1, col2, col3, col4, col5 = st.columns([1, 2.5, 1, 2.5, 1])
                 with col1:
                     st.image(game['VisitanteLogo'], width=45)
@@ -128,11 +132,15 @@ else:
                 
                 st.caption(f"🕒 Estado: {game['Estado']}")
                 
-                # Bloque integrado de Proyecciones de Puntos
+                # Métricas de Puntos (Visitante, Local, Total)
                 m1, m2, m3 = st.columns(3)
                 m1.metric(label=f"Proy. {game['Visitante'].split()[-1]}", value=game['ProjAway'])
                 m2.metric(label=f"Proy. {game['Local'].split()[-1]}", value=game['ProjHome'])
                 m3.metric(label="Total Proyectado", value=game['ProjTotal'])
+                
+                # Línea adicional con el Ritmo y el Spread
+                spread_text = f"Favorito Local por {game['ProjSpread']} pts" if game['ProjSpread'] > 0 else f"Favorito Visitante por {abs(game['ProjSpread'])} pts"
+                st.caption(⚡ **Ritmo Estimado:** {game['ProjPace']} posesiones | 🎯 **Spread:** {spread_text})
                 
                 st.divider()
     else:
