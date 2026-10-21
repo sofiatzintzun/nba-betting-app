@@ -4,6 +4,38 @@ from datetime import datetime
 
 st.set_page_config(page_title="NBA Schedule & Projections", layout="centered")
 
+# --- CSS PERSONALIZADO PARA RESPONSIVIDAD (MÓVILES Y TABLETS) ---
+st.markdown("""
+    <style>
+    /* Estilos generales y adaptación para pantallas móviles */
+    @media (max-width: 768px) {
+        .stMetric {
+            background-color: #f0f2f6;
+            padding: 8px;
+            border-radius: 8px;
+            margin-bottom: 5px;
+        }
+        h1 {
+            font-size: 1.6rem !important;
+        }
+        h3 {
+            font-size: 1.2rem !important;
+        }
+        .element-container {
+            font-size: 14px;
+        }
+    }
+    /* Mejora visual de las tarjetas de partidos */
+    div[data-testid="stVerticalBlock"] > div[data-testid="stContainer"] {
+        border: 1px solid #e0e0e0;
+        border-radius: 12px;
+        padding: 15px;
+        margin-bottom: 15px;
+        background-color: rgba(255, 255, 255, 0.02);
+    }
+    </style>
+""", unsafe_allow_html=True)
+
 st.title("🏀 NBA Schedule & Projections")
 
 # --- SELECTOR DE FECHA ---
@@ -17,9 +49,6 @@ LEAGUE_PTS_100 = 114.5
 # --- FUNCIÓN PARA EXTRAER ESTADÍSTICAS DINÁMICAS DE EQUIPOS DESDE ESPN ---
 @st.cache_data(ttl=3600)
 def get_team_stats_from_espn():
-    """
-    Obtiene la lista de equipos y sus estadísticas de la temporada actual directamente de ESPN.
-    """
     url = "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/teams"
     teams_stats = {}
     try:
@@ -35,7 +64,6 @@ def get_team_stats_from_espn():
                         team = t_item.get('team', {})
                         display_name = team.get('displayName')
                         
-                        # Extraer récords o estadísticas generales si están disponibles
                         record_info = team.get('record', {}).get('items', [])
                         ppg = LEAGUE_PTS_100
                         opp_ppg = LEAGUE_PTS_100
@@ -48,7 +76,6 @@ def get_team_stats_from_espn():
                                 elif stat.get('name') == 'pointsAgainst':
                                     opp_ppg = stat.get('value', LEAGUE_PTS_100)
                         
-                        # Estimación de métricas analíticas basadas en promedios por juego
                         teams_stats[display_name] = {
                             "Pace": LEAGUE_PACE,
                             "ORTG": (ppg / LEAGUE_PTS_100) * 114.5,
@@ -161,11 +188,11 @@ else:
         for game in games:
             with st.container():
                 col1, col2, col3, col4, col5 = st.columns([1, 2.5, 1, 2.5, 1])
-                with col1: st.image(game['VisitanteLogo'], width=45)
+                with col1: st.image(game['VisitanteLogo'], width=40)
                 with col2: st.markdown(f"**{game['Visitante']}**")
                 with col3: st.markdown("<h4 style='text-align: center; margin: 0;'>@</h4>", unsafe_allow_html=True)
                 with col4: st.markdown(f"**{game['Local']}**")
-                with col5: st.image(game['LocalLogo'], width=45)
+                with col5: st.image(game['LocalLogo'], width=40)
                 
                 st.caption(f"🕒 Estado: {game['Estado']}")
                 
