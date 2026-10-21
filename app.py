@@ -7,11 +7,10 @@ st.set_page_config(page_title="NBA Schedule App", layout="centered")
 st.title("🏀 Calendario NBA")
 
 # --- SELECTOR DE FECHA ---
-# Te permite elegir qué día quieres consultar (por defecto selecciona hoy)
 selected_date = st.date_input("Selecciona la fecha del juego", datetime.now())
-date_str = selected_date.strftime("%Y%m%d") # Formato que pide ESPN (AAAAMMDD)
+date_str = selected_date.strftime("%Y%m%d")
 
-# --- FUNCIÓN PARA OBTENER EL CALENDARIO SEGÚN LA FECHA ---
+# --- FUNCIÓN PARA OBTENER EL CALENDARIO CON LOGOS ---
 @st.cache_data(ttl=300)
 def get_schedule(date_formatted):
     url = f"https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates={date_formatted}"
@@ -31,19 +30,29 @@ def get_schedule(date_formatted):
             competitors = competition['competitors']
             
             home_team = ""
+            home_logo = ""
             away_team = ""
+            away_logo = ""
+            
             for comp in competitors:
                 team_name = comp['team']['displayName']
+                # Obtenemos el logo del equipo (si existe)
+                logo_url = comp['team'].get('logo', 'https://a.espncdn.com/i/teamlogos/default-team-logo.png')
+                
                 if comp['homeAway'] == 'home':
                     home_team = team_name
+                    home_logo = logo_url
                 else:
                     away_team = team_name
+                    away_logo = logo_url
             
             status_text = competition['status']['type']['detail']
             
             schedule_list.append({
                 "Local": home_team,
+                "LocalLogo": home_logo,
                 "Visitante": away_team,
+                "VisitanteLogo": away_logo,
                 "Estado": status_text
             })
             
@@ -68,7 +77,21 @@ else:
     if games:
         for game in games:
             with st.container():
-                st.markdown(f"**{game['Visitante']}** @ **{game['Local']}**")
+                # Creamos 5 columnas para alinear los logos y nombres: 
+                # [Logo Vis, Nombre Vis, @/VS, Nombre Loc, Logo Loc]
+                col1, col2, col3, col4, col5 = st.columns([1, 2.5, 1, 2.5, 1])
+                
+                with col1:
+                    st.image(game['VisitanteLogo'], width=45)
+                with col2:
+                    st.markdown(f"**{game['Visitante']}**")
+                with col3:
+                    st.markdown("<h4 style='text-align: center; margin: 0;'>@</h4>", unsafe_allow_html=True)
+                with col4:
+                    st.markdown(f"**{game['Local']}**")
+                with col5:
+                    st.image(game['LocalLogo'], width=45)
+                    
                 st.caption(f"🕒 {game['Estado']}")
                 st.divider()
     else:
