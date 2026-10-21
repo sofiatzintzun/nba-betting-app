@@ -138,9 +138,9 @@ else:
                 m2.metric(label=f"Proy. {game['Local'].split()[-1]}", value=game['ProjHome'])
                 m3.metric(label="Total Proyectado", value=game['ProjTotal'])
                 
-                # Línea adicional con el Ritmo y el Spread
+                # Línea adicional con el Ritmo y el Spread corregida
                 spread_text = f"Favorito Local por {game['ProjSpread']} pts" if game['ProjSpread'] > 0 else f"Favorito Visitante por {abs(game['ProjSpread'])} pts"
-                st.caption(⚡ **Ritmo Estimado:** {game['ProjPace']} posesiones | 🎯 **Spread:** {spread_text})
+                st.caption(f"⚡ **Ritmo Estimado:** {game['ProjPace']} posesiones | 🎯 **Spread:** {spread_text}")
                 
                 st.divider()
     else:
