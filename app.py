@@ -165,4 +165,74 @@ else:
                 
                 st.caption(f"🕒 Estado: {game['Estado']}")
                 
-                # Métricas de Puntos (Visit
+                # Métricas de Puntos (Visitante, Local, Total)
+                m1, m2, m3 = st.columns(3)
+                m1.metric(label=f"Proy. {game['Visitante'].split()[-1]}", value=game['ProjAway'])
+                m2.metric(label=f"Proy. {game['Local'].split()[-1]}", value=game['ProjHome'])
+                m3.metric(label="Total Proyectado", value=game['ProjTotal'])
+                
+                # Texto del Spread del Modelo
+                if game['ProjSpread'] > 0:
+                    favorite_text = f"Favorito **{game['Local']}** por **{game['ProjSpread']}** pts"
+                elif game['ProjSpread'] < 0:
+                    favorite_text = f"Favorito **{game['Visitante']}** por **{abs(game['ProjSpread'])}** pts"
+                else:
+                    favorite_text = "Partido Empatado"
+
+                st.caption(f"⚡ **Ritmo:** {game['ProjPace']} pos | 🎯 **Modelo:** {favorite_text}")
+                
+                # --- SECCIÓN FUERA DEL CASINO: JUGADORES CLAVE (PROPS) ---
+                st.markdown("👥 **Jugadores Clave Recomendados (Props):**")
+                p_col1, p_col2 = st.columns(2)
+                
+                with p_col1:
+                    st.markdown(f"**{game['Visitante']}**")
+                    st.markdown(f"• 🏀 Puntos: `{game['AwayPlayers'].get('PTS', 'N/A')}`")
+                    st.markdown(f"• 🎯 Asistencias: `{game['AwayPlayers'].get('AST', 'N/A')}`")
+                    st.markdown(f"• 🛡️ Rebotes: `{game['AwayPlayers'].get('REB', 'N/A')}`")
+                    st.markdown(f"• 🛑 Robos/Bloq: `{game['AwayPlayers'].get('STL', 'N/A')} / {game['AwayPlayers'].get('BLK', 'N/A')}`")
+                    
+                with p_col2:
+                    st.markdown(f"**{game['Local']}**")
+                    st.markdown(f"• 🏀 Puntos: `{game['HomePlayers'].get('PTS', 'N/A')}`")
+                    st.markdown(f"• 🎯 Asistencias: `{game['HomePlayers'].get('AST', 'N/A')}`")
+                    st.markdown(f"• 🛡️ Rebotes: `{game['HomePlayers'].get('REB', 'N/A')}`")
+                    st.markdown(f"• 🛑 Robos/Bloq: `{game['HomePlayers'].get('STL', 'N/A')} / {game['HomePlayers'].get('BLK', 'N/A')}`")
+
+                # --- MODO COMPARATIVO DE VALOR (CASINO) ---
+                with st.expander("🧮 Comparativa Automática con el Casino"):
+                    if not game['HasOdds']:
+                        st.warning("⚠️ Sin cuotas oficiales publicadas en ESPN aún.")
+                    
+                    st.markdown(f"**Línea detectada del Casino ({game['Local']} Spread):** `{game['CasinoSpread']}`")
+                    st.markdown(f"**Línea detectada del Casino (Over/Under):** `{game['CasinoOU']}`")
+                    
+                    st.markdown("---")
+                    st.markdown("💡 **Resultado del Análisis de Valor:**")
+                    
+                    # 1. Análisis de Spread
+                    casino_margin_for_home = -1 * game['CasinoSpread'] if game['CasinoSpread'] < 0 else game['CasinoSpread']
+                    diff_spread = game['ProjSpread'] - casino_margin_for_home
+                    
+                    st.markdown("🎯 **Hándicap / Spread:**")
+                    if abs(diff_spread) < 0.8:
+                        st.info("⚖️ **Línea justa en Spread:** El casino está alineado con el modelo.")
+                    elif diff_spread > 0.8:
+                        st.success(f"🔥 **Valor en el Favorito ({game['Local']}):** El modelo proyecta que gana por **{game['ProjSpread']}** pts (superando el hándicap del casino de {casino_margin_for_home} pts).")
+                    else:
+                        st.success(f"🛡️ **Valor en el Underdog ({game['Visitante']}):** El casino pide mucho al local ({casino_margin_for_home} pts). Margen a favor del visitante.")
+
+                    # 2. Análisis de Total (Over/Under)
+                    ou_diff = game['ProjTotal'] - game['CasinoOU']
+                    
+                    st.markdown("🏀 **Totales (Over/Under):**")
+                    if abs(ou_diff) < 1.0:
+                        st.info(f"⚖️ **Línea justa en Total:** Proyección ({game['ProjTotal']}) muy cercana a la línea del casino ({game['CasinoOU']}).")
+                    elif ou_diff < -1.0:
+                        st.success(f"📉 **Valor en el Under:** El casino marcó **{game['CasinoOU']}** pts, pero tu modelo proyecta **{game['ProjTotal']}** pts. Hay valor en el **Under** por **{abs(round(ou_diff, 1))}** puntos.")
+                    else:
+                        st.success(f"📈 **Valor en el Over:** El casino marcó **{game['CasinoOU']}** pts, pero tu modelo proyecta **{game['ProjTotal']}** pts. Hay valor en el **Over** por **{round(ou_diff, 1)}** puntos.")
+
+                st.divider()
+    else:
+        st.info("No hay partidos programados para esta fecha en la NBA.")
