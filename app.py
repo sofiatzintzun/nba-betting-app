@@ -47,7 +47,7 @@ def calculate_projection(away_team, home_team):
     home_pts = ((home_adj_ortg / 100) * game_pace) + 2.5
     total_pts = away_pts + home_pts
     
-    # 4. Spread Proyectado (Diferencia a favor del Local)
+    # 4. Spread Proyectado (Positivo = Local favorito, Negativo = Visitante favorito)
     spread = home_pts - away_pts
 
     return round(away_pts, 1), round(home_pts, 1), round(total_pts, 1), round(game_pace, 1), round(spread, 1)
@@ -114,7 +114,7 @@ else:
     st.subheader(f"Partidos del {selected_date.strftime('%d/%m/%Y')} ({len(games)})")
     
     if games:
-        for game in games:
+        for index, game in enumerate(games):
             with st.container():
                 # Encabezado con logos y nombres
                 col1, col2, col3, col4, col5 = st.columns([1, 2.5, 1, 2.5, 1])
@@ -137,16 +137,42 @@ else:
                 m2.metric(label=f"Proy. {game['Local'].split()[-1]}", value=game['ProjHome'])
                 m3.metric(label="Total Proyectado", value=game['ProjTotal'])
                 
-                # Lógica del Spread usando los nombres reales de los equipos
+                # Texto del Spread del Modelo
                 if game['ProjSpread'] > 0:
                     favorite_text = f"Favorito **{game['Local']}** por **{game['ProjSpread']}** pts"
                 elif game['ProjSpread'] < 0:
                     favorite_text = f"Favorito **{game['Visitante']}** por **{abs(game['ProjSpread'])}** pts"
                 else:
-                    favorite_text = "Partido Empatado (Pick 'em)"
+                    favorite_text = "Partido Empatado"
 
-                # Línea adicional con el Ritmo y el Spread con nombre propio
-                st.caption(f"⚡ **Ritmo:** {game['ProjPace']} pos | 🎯 **Spread:** {favorite_text}")
+                st.caption(f"⚡ **Ritmo:** {game['ProjPace']} pos | 🎯 **Modelo:** {favorite_text}")
+                
+                # --- MODO COMPARATIVO DE VALOR (EXPANDER) ---
+                with st.expander("🧮 Analizar Valor de Apuesta vs Casino"):
+                    st.markdown(f"Introduce la línea actual del casino para el **equipo Local ({game['Local']})**:")
+                    # Input con un key único por cada partido para evitar conflictos en Streamlit
+                    casino_spread = st.number_input(
+                        f"Spread Casino ({game['Local']})", 
+                        value=float(game['ProjSpread']), 
+                        step=0.5, 
+                        key=f"casino_spread_{index}"
+                    )
+                    
+                    # Comparativa de valor
+                    # Si el modelo dice que gana por X y el casino pide Y
+                    diff = game['ProjSpread'] - casino_spread
+                    
+                    st.markdown("---")
+                    st.markdown("💡 **Resultado del Análisis de Valor:**")
+                    
+                    if abs(diff) < 1.0:
+                        st.info("⚖️ **Línea justa:** El casino está muy alineado con tu modelo. No hay ventaja clara.")
+                    elif diff >= 1.0:
+                        # El modelo da favorito al local por más de lo que pide el casino
+                        st.success(f"🔥 **Valor en el Favorito ({game['Local']}):** Tu modelo espera que cubra con holgura respecto a la línea del casino.")
+                    elif diff <= -1.0:
+                        # El modelo da favorito al local por menos, o el casino pide demasiados puntos -> Valor en el Underdog (Visitante)
+                        st.success(f" underdog 🛡️ **Valor en el Underdog ({game['Visitante']}):** El casino sobrevalora al local; hay un gran colchón a favor del visitante.")
                 
                 st.divider()
     else:
