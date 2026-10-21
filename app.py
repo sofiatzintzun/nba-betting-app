@@ -10,84 +10,60 @@ st.title("🏀 NBA Schedule & Projections")
 selected_date = st.date_input("Selecciona la fecha del juego", datetime.now())
 date_str = selected_date.strftime("%Y%m%d")
 
-# --- DICCIONARIO BASE DE DATOS DE EQUIPOS (Pace, ORTG, DRTG) ---
-TEAMS_DATA = {
-    "Atlanta Hawks": {"Pace": 100.2, "ORTG": 115.0, "DRTG": 116.0},
-    "Boston Celtics": {"Pace": 98.5, "ORTG": 118.0, "DRTG": 110.0},
-    "Brooklyn Nets": {"Pace": 97.8, "ORTG": 111.2, "DRTG": 115.4},
-    "Charlotte Hornets": {"Pace": 98.9, "ORTG": 109.8, "DRTG": 116.2},
-    "Chicago Bulls": {"Pace": 101.1, "ORTG": 112.5, "DRTG": 115.0},
-    "Cleveland Cavaliers": {"Pace": 98.2, "ORTG": 117.2, "DRTG": 110.5},
-    "Dallas Mavericks": {"Pace": 99.1, "ORTG": 117.1, "DRTG": 114.0},
-    "Denver Nuggets": {"Pace": 97.2, "ORTG": 116.5, "DRTG": 112.1},
-    "Detroit Pistons": {"Pace": 98.6, "ORTG": 110.1, "DRTG": 114.8},
-    "Golden State Warriors": {"Pace": 100.5, "ORTG": 115.0, "DRTG": 111.5},
-    "Houston Rockets": {"Pace": 99.0, "ORTG": 113.8, "DRTG": 111.2},
-    "Indiana Pacers": {"Pace": 102.3, "ORTG": 118.5, "DRTG": 117.0},
-    "LA Clippers": {"Pace": 97.1, "ORTG": 114.0, "DRTG": 112.0},
-    "Los Angeles Lakers": {"Pace": 101.0, "ORTG": 114.2, "DRTG": 113.8},
-    "Memphis Grizzlies": {"Pace": 100.8, "ORTG": 113.5, "DRTG": 111.8},
-    "Miami Heat": {"Pace": 96.0, "ORTG": 112.0, "DRTG": 109.5},
-    "Milwaukee Bucks": {"Pace": 100.2, "ORTG": 116.8, "DRTG": 113.2},
-    "Minnesota Timberwolves": {"Pace": 97.5, "ORTG": 114.5, "DRTG": 108.5},
-    "New Orleans Pelicans": {"Pace": 98.0, "ORTG": 114.2, "DRTG": 113.5},
-    "New York Knicks": {"Pace": 95.8, "ORTG": 117.5, "DRTG": 112.3},
-    "Oklahoma City Thunder": {"Pace": 99.8, "ORTG": 116.2, "DRTG": 111.0},
-    "Orlando Magic": {"Pace": 97.0, "ORTG": 113.5, "DRTG": 108.5},
-    "Philadelphia 76ers": {"Pace": 97.8, "ORTG": 115.5, "DRTG": 111.8},
-    "Phoenix Suns": {"Pace": 98.2, "ORTG": 116.0, "DRTG": 113.0},
-    "Portland Trail Blazers": {"Pace": 98.4, "ORTG": 108.9, "DRTG": 115.8},
-    "Sacramento Kings": {"Pace": 99.5, "ORTG": 116.0, "DRTG": 114.5},
-    "San Antonio Spurs": {"Pace": 100.1, "ORTG": 111.0, "DRTG": 113.9},
-    "Toronto Raptors": {"Pace": 99.2, "ORTG": 112.3, "DRTG": 115.1},
-    "Utah Jazz": {"Pace": 99.7, "ORTG": 113.0, "DRTG": 116.5},
-    "Washington Wizards": {"Pace": 102.0, "ORTG": 108.5, "DRTG": 117.8}
-}
-
-# --- DICCIONARIO COMPLETO DE LOS 30 EQUIPOS (LÍDER #1 POR CATEGORÍA) ---
-PLAYERS_PROPS = {
-    "Atlanta Hawks": {"PTS": "Trae Young", "AST": "Trae Young", "REB": "Jalen Johnson", "STL": "Dyson Daniels", "BLK": "Clint Capela"},
-    "Boston Celtics": {"PTS": "Jayson Tatum", "AST": "Jrue Holiday", "REB": "Jayson Tatum", "STL": "Derrick White", "BLK": "Kristaps Porzingis"},
-    "Brooklyn Nets": {"PTS": "Cam Thomas", "AST": "Dennis Schroder", "REB": "Nic Claxton", "STL": "Ben Simmons", "BLK": "Nic Claxton"},
-    "Charlotte Hornets": {"PTS": "LaMelo Ball", "AST": "LaMelo Ball", "REB": "Miles Bridges", "STL": "LaMelo Ball", "BLK": "Mark Williams"},
-    "Chicago Bulls": {"PTS": "Coby White", "AST": "Josh Giddey", "REB": "Nikola Vucevic", "STL": "Ayo Dosunmu", "BLK": "Nikola Vucevic"},
-    "Cleveland Cavaliers": {"PTS": "Donovan Mitchell", "AST": "Darius Garland", "REB": "Evan Mobley", "STL": "Donovan Mitchell", "BLK": "Evan Mobley"},
-    "Dallas Mavericks": {"PTS": "Luka Doncic", "AST": "Luka Doncic", "REB": "Luka Doncic", "STL": "P.J. Washington", "BLK": "Dereck Lively II"},
-    "Denver Nuggets": {"PTS": "Nikola Jokic", "AST": "Nikola Jokic", "REB": "Nikola Jokic", "STL": "Nikola Jokic", "BLK": "Aaron Gordon"},
-    "Detroit Pistons": {"PTS": "Cade Cunningham", "AST": "Cade Cunningham", "REB": "Jalen Duren", "STL": "Cade Cunningham", "BLK": "Jalen Duren"},
-    "Golden State Warriors": {"PTS": "Stephen Curry", "AST": "Draymond Green", "REB": "Kevon Looney", "STL": "Brandin Podziemski", "BLK": "Draymond Green"},
-    "Houston Rockets": {"PTS": "Alperen Sengun", "AST": "Fred VanVleet", "REB": "Alperen Sengun", "STL": "Tari Eason", "BLK": "Amen Thompson"},
-    "Indiana Pacers": {"PTS": "Pascal Siakam", "AST": "Tyrese Haliburton", "REB": "Myles Turner", "STL": "Tyrese Haliburton", "BLK": "Myles Turner"},
-    "LA Clippers": {"PTS": "James Harden", "AST": "James Harden", "REB": "Ivica Zubac", "STL": "Kris Dunn", "BLK": "Ivica Zubac"},
-    "Los Angeles Lakers": {"PTS": "Anthony Davis", "AST": "LeBron James", "REB": "Anthony Davis", "STL": "Austin Reaves", "BLK": "Anthony Davis"},
-    "Memphis Grizzlies": {"PTS": "Ja Morant", "AST": "Ja Morant", "REB": "Jaren Jackson Jr.", "STL": "Marcus Smart", "BLK": "Jaren Jackson Jr."},
-    "Miami Heat": {"PTS": "Tyler Herro", "AST": "Jimmy Butler", "REB": "Bam Adebayo", "STL": "Jimmy Butler", "BLK": "Bam Adebayo"},
-    "Milwaukee Bucks": {"PTS": "Giannis Antetokounmpo", "AST": "Damian Lillard", "REB": "Giannis Antetokounmpo", "STL": "Gary Trent Jr.", "BLK": "Brook Lopez"},
-    "Minnesota Timberwolves": {"PTS": "Anthony Edwards", "AST": "Mike Conley", "REB": "Rudy Gobert", "STL": "Nickeil Alexander-Walker", "BLK": "Rudy Gobert"},
-    "New Orleans Pelicans": {"PTS": "Zion Williamson", "AST": "DeJounte Murray", "REB": "Zion Williamson", "STL": "DeJounte Murray", "BLK": "Yves Missi"},
-    "New York Knicks": {"PTS": "Jalen Brunson", "AST": "Jalen Brunson", "REB": "Karl-Anthony Towns", "STL": "Mikal Bridges", "BLK": "Karl-Anthony Towns"},
-    "Oklahoma City Thunder": {"PTS": "Shai Gilgeous-Alexander", "AST": "Shai Gilgeous-Alexander", "REB": "Chet Holmgren", "STL": "Alex Caruso", "BLK": "Chet Holmgren"},
-    "Orlando Magic": {"PTS": "Paolo Banchero", "AST": "Franz Wagner", "REB": "Paolo Banchero", "STL": "Jalen Suggs", "BLK": "Goga Bitadze"},
-    "Philadelphia 76ers": {"PTS": "Tyrese Maxey", "AST": "Tyrese Maxey", "REB": "Joel Embiid", "STL": "Kelly Oubre Jr.", "BLK": "Joel Embiid"},
-    "Phoenix Suns": {"PTS": "Kevin Durant", "AST": "Devin Booker", "REB": "Jusuf Nurkic", "STL": "Grayson Allen", "BLK": "Kevin Durant"},
-    "Portland Trail Blazers": {"PTS": "Anfernee Simons", "AST": "Anfernee Simons", "REB": "Deandre Ayton", "STL": "Toumani Camara", "BLK": "Donovan Clingan"},
-    "Sacramento Kings": {"PTS": "De'Aaron Fox", "AST": "Domantas Sabonis", "REB": "Domantas Sabonis", "STL": "De'Aaron Fox", "BLK": "Keegan Murray"},
-    "San Antonio Spurs": {"PTS": "Victor Wembanyama", "AST": "Chris Paul", "REB": "Victor Wembanyama", "STL": "Victor Wembanyama", "BLK": "Victor Wembanyama"},
-    "Toronto Raptors": {"PTS": "RJ Barrett", "AST": "Immanuel Quickley", "REB": "Jakob Poeltl", "STL": "Scottie Barnes", "BLK": "Jakob Poeltl"},
-    "Utah Jazz": {"PTS": "Lauri Markkanen", "AST": "Keyonte George", "REB": "Walker Kessler", "STL": "Collin Sexton", "BLK": "Walker Kessler"},
-    "Washington Wizards": {"PTS": "Jordan Poole", "AST": "Carlton Carrington", "REB": "Jonas Valanciunas", "STL": "Jordan Poole", "BLK": "Alex Sarr"}
-}
-
-DEFAULT_STATS = {"Pace": 99.0, "ORTG": 114.5, "DRTG": 114.5}
-DEFAULT_PLAYER = {"PTS": "Sin registrar", "AST": "Sin registrar", "REB": "Sin registrar", "STL": "Sin registrar", "BLK": "Sin registrar"}
-
+# --- VALORES PROMEDIO DE LA LIGA (RESPALDO Y BASE) ---
 LEAGUE_PACE = 99.0
 LEAGUE_PTS_100 = 114.5
 
-# --- FUNCIÓN DE CÁLCULO DE PROYECCIÓN ---
-def calculate_projection(away_team, home_team):
-    away_stats = TEAMS_DATA.get(away_team, DEFAULT_STATS)
-    home_stats = TEAMS_DATA.get(home_team, DEFAULT_STATS)
+# --- FUNCIÓN PARA EXTRAER ESTADÍSTICAS DINÁMICAS DE EQUIPOS DESDE ESPN ---
+@st.cache_data(ttl=3600)
+def get_team_stats_from_espn():
+    """
+    Obtiene la lista de equipos y sus estadísticas de la temporada actual directamente de ESPN.
+    """
+    url = "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/teams"
+    teams_stats = {}
+    try:
+        response = requests.get(url, timeout=10)
+        if response.status_code == 200:
+            data = response.json()
+            sports = data.get('sports', [])
+            if sports:
+                leagues = sports[0].get('leagues', [])
+                if leagues:
+                    teams_list = leagues[0].get('teams', [])
+                    for t_item in teams_list:
+                        team = t_item.get('team', {})
+                        display_name = team.get('displayName')
+                        
+                        # Extraer récords o estadísticas generales si están disponibles
+                        record_info = team.get('record', {}).get('items', [])
+                        ppg = LEAGUE_PTS_100
+                        opp_ppg = LEAGUE_PTS_100
+                        
+                        if record_info:
+                            stats_list = record_info[0].get('stats', [])
+                            for stat in stats_list:
+                                if stat.get('name') == 'pointsFor':
+                                    ppg = stat.get('value', LEAGUE_PTS_100)
+                                elif stat.get('name') == 'pointsAgainst':
+                                    opp_ppg = stat.get('value', LEAGUE_PTS_100)
+                        
+                        # Estimación de métricas analíticas basadas en promedios por juego
+                        teams_stats[display_name] = {
+                            "Pace": LEAGUE_PACE,
+                            "ORTG": (ppg / LEAGUE_PTS_100) * 114.5,
+                            "DRTG": (opp_ppg / LEAGUE_PTS_100) * 114.5
+                        }
+        return teams_stats
+    except Exception:
+        return {}
+
+# --- FUNCIÓN DE CÁLCULO DE PROYECCIÓN DINÁMICA ---
+def calculate_projection(away_team, home_team, dynamic_stats):
+    default_stats = {"Pace": LEAGUE_PACE, "ORTG": LEAGUE_PTS_100, "DRTG": LEAGUE_PTS_100}
+    
+    away_stats = dynamic_stats.get(away_team, default_stats)
+    home_stats = dynamic_stats.get(home_team, default_stats)
 
     game_pace = (away_stats["Pace"] * home_stats["Pace"]) / LEAGUE_PACE
     away_adj_ortg = away_stats["ORTG"] * (home_stats["DRTG"] / LEAGUE_PTS_100)
@@ -104,6 +80,8 @@ def calculate_projection(away_team, home_team):
 @st.cache_data(ttl=300)
 def get_schedule(date_formatted):
     url = f"https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates={date_formatted}"
+    dynamic_stats = get_team_stats_from_espn()
+    
     try:
         response = requests.get(url, timeout=10)
         if response.status_code != 200:
@@ -139,16 +117,12 @@ def get_schedule(date_formatted):
                 casino_spread = odds_item.get('spread', None)
                 casino_ou = odds_item.get('overUnder', None)
             
-            away_pts, home_pts, total_pts, game_pace, model_spread = calculate_projection(away_team, home_team)
+            away_pts, home_pts, total_pts, game_pace, model_spread = calculate_projection(away_team, home_team, dynamic_stats)
             
             if casino_spread is None:
                 casino_spread = model_spread
             if casino_ou is None:
                 casino_ou = total_pts
-            
-            # Obtener props de jugadores con método .get() seguro
-            away_players = PLAYERS_PROPS.get(away_team, DEFAULT_PLAYER)
-            home_players = PLAYERS_PROPS.get(home_team, DEFAULT_PLAYER)
             
             schedule_list.append({
                 "Local": home_team,
@@ -163,9 +137,7 @@ def get_schedule(date_formatted):
                 "ProjSpread": model_spread,
                 "CasinoSpread": float(casino_spread),
                 "CasinoOU": float(casino_ou),
-                "HasOdds": len(odds_data) > 0,
-                "AwayPlayers": away_players,
-                "HomePlayers": home_players
+                "HasOdds": len(odds_data) > 0
             })
             
         return schedule_list
@@ -197,7 +169,6 @@ else:
                 
                 st.caption(f"🕒 Estado: {game['Estado']}")
                 
-                # Métricas de Puntos (Visitante, Local, Total)
                 m1, m2, m3 = st.columns(3)
                 m1.metric(label=f"Proy. {game['Visitante'].split()[-1]}", value=game['ProjAway'])
                 m2.metric(label=f"Proy. {game['Local'].split()[-1]}", value=game['ProjHome'])
@@ -213,25 +184,7 @@ else:
 
                 st.caption(f"⚡ **Ritmo:** {game['ProjPace']} pos | 🎯 **Modelo:** {favorite_text}")
                 
-                # --- SECCIÓN FUERA DEL CASINO: JUGADORES CLAVE (PROPS) ---
-                st.markdown("👥 **Líderes Clave Recomendados (Props):**")
-                p_col1, p_col2 = st.columns(2)
-                
-                with p_col1:
-                    st.markdown(f"**{game['Visitante']}**")
-                    st.markdown(f"• 🏀 Puntos: `{game['AwayPlayers'].get('PTS', 'N/A')}`")
-                    st.markdown(f"• 🎯 Asistencias: `{game['AwayPlayers'].get('AST', 'N/A')}`")
-                    st.markdown(f"• 🛡️ Rebotes: `{game['AwayPlayers'].get('REB', 'N/A')}`")
-                    st.markdown(f"• 🛑 Robos/Bloq: `{game['AwayPlayers'].get('STL', 'N/A')} / {game['AwayPlayers'].get('BLK', 'N/A')}`")
-                    
-                with p_col2:
-                    st.markdown(f"**{game['Local']}**")
-                    st.markdown(f"• 🏀 Puntos: `{game['HomePlayers'].get('PTS', 'N/A')}`")
-                    st.markdown(f"• 🎯 Asistencias: `{game['HomePlayers'].get('AST', 'N/A')}`")
-                    st.markdown(f"• 🛡️ Rebotes: `{game['HomePlayers'].get('REB', 'N/A')}`")
-                    st.markdown(f"• 🛑 Robos/Bloq: `{game['HomePlayers'].get('STL', 'N/A')} / {game['HomePlayers'].get('BLK', 'N/A')}`")
-
-                # --- MODO COMPARATIVO DE VALOR (CASINO) ---
+                # --- MODO COMPARATIVO DE VALOR (SPREAD + TOTAL) ---
                 with st.expander("🧮 Comparativa Automática con el Casino"):
                     if not game['HasOdds']:
                         st.warning("⚠️ Sin cuotas oficiales publicadas en ESPN aún.")
@@ -248,23 +201,4 @@ else:
                     
                     st.markdown("🎯 **Hándicap / Spread:**")
                     if abs(diff_spread) < 0.8:
-                        st.info("⚖️ **Línea justa en Spread:** El casino está alineado con el modelo.")
-                    elif diff_spread > 0.8:
-                        st.success(f"🔥 **Valor en el Favorito ({game['Local']}):** El modelo proyecta que gana por **{game['ProjSpread']}** pts (superando el hándicap del casino de {casino_margin_for_home} pts).")
-                    else:
-                        st.success(f"🛡️ **Valor en el Underdog ({game['Visitante']}):** El casino pide mucho al local ({casino_margin_for_home} pts). Margen a favor del visitante.")
-
-                    # 2. Análisis de Total (Over/Under)
-                    ou_diff = game['ProjTotal'] - game['CasinoOU']
-                    
-                    st.markdown("🏀 **Totales (Over/Under):**")
-                    if abs(ou_diff) < 1.0:
-                        st.info(f"⚖️ **Línea justa en Total:** Proyección ({game['ProjTotal']}) muy cercana a la línea del casino ({game['CasinoOU']}).")
-                    elif ou_diff < -1.0:
-                        st.success(f"📉 **Valor en el Under:** El casino marcó **{game['CasinoOU']}** pts, pero tu modelo proyecta **{game['ProjTotal']}** pts. Hay valor en el **Under** por **{abs(round(ou_diff, 1))}** puntos.")
-                    else:
-                        st.success(f"📈 **Valor en el Over:** El casino marcó **{game['CasinoOU']}** pts, pero tu modelo proyecta **{game['ProjTotal']}** pts. Hay valor en el **Over** por **{round(ou_diff, 1)}** puntos.")
-
-                st.divider()
-    else:
-        st.info("No hay partidos programados para esta fecha en la NBA.")
+                        st.
