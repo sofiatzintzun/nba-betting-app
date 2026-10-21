@@ -35,10 +35,10 @@ PLAYERS_PROPS = {
     "Boston Celtics": {"PTS": "Jayson Tatum", "AST": "Jrue Holiday", "REB": "Jaylen Brown", "STL": "Derrick White", "BLK": "Kristaps Porzingis"},
     "Denver Nuggets": {"PTS": "Nikola Jokic", "AST": "Nikola Jokic", "REB": "Nikola Jokic", "STL": "Christian Braun", "BLK": "Aaron Gordon"},
     "Los Angeles Lakers": {"PTS": "Luka Doncic", "AST": "LeBron James", "REB": "Anthony Davis", "STL": "Austin Reaves", "BLK": "Anthony Davis"},
-    "GoldenState Warriors": {"PTS": "Stephen Curry", "AST": "Draymond Green", "REB": "Kevon Looney", "STL": "Brandin Podziemski", "BLK": "Draymond Green"},
+    "Golden State Warriors": {"PTS": "Stephen Curry", "AST": "Draymond Green", "REB": "Kevon Looney", "STL": "Brandin Podziemski", "BLK": "Draymond Green"},
     "Miami Heat": {"PTS": "Tyler Herro", "AST": "Jimmy Butler", "REB": "Bam Adebayo", "STL": "Jimmy Butler", "BLK": "Bam Adebayo"},
     "Dallas Mavericks": {"PTS": "Kyrie Irving", "AST": "Luka Doncic", "REB": "P.J. Washington", "STL": "Naji Marshall", "BLK": "Dereck Lively II"},
-    "Milwaukee Bucks": {"PTS": "Giannis Antetokounmpo", "AST": "Damian Lillard", "REB": "Giannis Antetokounmpo", "AST_DEF": "Brook Lopez", "BLK": "Brook Lopez"},
+    "Milwaukee Bucks": {"PTS": "Giannis Antetokounmpo", "AST": "Damian Lillard", "REB": "Giannis Antetokounmpo", "STL": "Gary Trent Jr.", "BLK": "Brook Lopez"},
     "Philadelphia 76ers": {"PTS": "Tyrese Maxey", "AST": "Tyrese Maxey", "REB": "Joel Embiid", "STL": "Kelly Oubre Jr.", "BLK": "Joel Embiid"},
     "Phoenix Suns": {"PTS": "Kevin Durant", "AST": "Devin Booker", "REB": "Jusuf Nurkic", "STL": "Grayson Allen", "BLK": "Kevin Durant"},
     "Minnesota Timberwolves": {"PTS": "Anthony Edwards", "AST": "Mike Conley", "REB": "Rudy Gobert", "STL": "Nickeil Alexander-Walker", "BLK": "Rudy Gobert"},
@@ -47,7 +47,7 @@ PLAYERS_PROPS = {
 }
 
 DEFAULT_STATS = {"Pace": 99.0, "ORTG": 114.5, "DRTG": 114.5}
-DEFAULT_PLAYER = {"PTS": "Líder Principal", "AST": "Playmaker", "REB": "Rebotero", "STL": "Ladrón", "BLK": "Protector Aros"}
+DEFAULT_PLAYER = {"PTS": "Líder Principal", "AST": "Playmaker", "REB": "Rebotero", "STL": "Defensor", "BLK": "Protector Aros"}
 
 LEAGUE_PACE = 99.0
 LEAGUE_PTS_100 = 114.5
@@ -114,7 +114,7 @@ def get_schedule(date_formatted):
             if casino_ou is None:
                 casino_ou = total_pts
             
-            # Obtener props de jugadores (con respaldo por defecto si el equipo no está listado)
+            # Obtener props de jugadores
             away_players = PLAYERS_PROPS.get(away_team, DEFAULT_PLAYER)
             home_players = PLAYERS_PROPS.get(home_team, DEFAULT_PLAYER)
             
@@ -165,74 +165,4 @@ else:
                 
                 st.caption(f"🕒 Estado: {game['Estado']}")
                 
-                # Métricas de Puntos (Visitante, Local, Total)
-                m1, m2, m3 = st.columns(3)
-                m1.metric(label=f"Proy. {game['Visitante'].split()[-1]}", value=game['ProjAway'])
-                m2.metric(label=f"Proy. {game['Local'].split()[-1]}", value=game['ProjHome'])
-                m3.metric(label="Total Proyectado", value=game['ProjTotal'])
-                
-                # Texto del Spread del Modelo
-                if game['ProjSpread'] > 0:
-                    favorite_text = f"Favorito **{game['Local']}** por **{game['ProjSpread']}** pts"
-                elif game['ProjSpread'] < 0:
-                    favorite_text = f"Favorito **{game['Visitante']}** por **{abs(game['ProjSpread'])}** pts"
-                else:
-                    favorite_text = "Partido Empatado"
-
-                st.caption(f"⚡ **Ritmo:** {game['ProjPace']} pos | 🎯 **Modelo:** {favorite_text}")
-                
-                # --- SECCIÓN FUERA DEL CASINO: JUGADORES CLAVE (PROPS) ---
-                st.markdown("👥 **Jugadores Clave Recomendados (Props):**")
-                p_col1, p_col2 = st.columns(2)
-                
-                with p_col1:
-                    st.markdown(f"**{game['Visitante']}**")
-                    st.markdown(f"• 🏀 Puntos: `{game['AwayPlayers']['PTS']}`")
-                    st.markdown(f"• 🎯 Asistencias: `{game['AwayPlayers']['AST']}`")
-                    st.markdown(f"• 🛡️ Rebotes: `{game['AwayPlayers']['REB']}`")
-                    st.markdown(f"• 🛑 Robos/Bloq: `{game['AwayPlayers']['STL']} / {game['AwayPlayers']['BLK']}`")
-                    
-                with p_col2:
-                    st.markdown(f"**{game['Local']}**")
-                    st.markdown(f"• 🏀 Puntos: `{game['HomePlayers']['PTS']}`")
-                    st.markdown(f"• 🎯 Asistencias: `{game['HomePlayers']['AST']}`")
-                    st.markdown(f"• 🛡️ Rebotes: `{game['HomePlayers']['REB']}`")
-                    st.markdown(f"• 🛑 Robos/Bloq: `{game['HomePlayers']['STL']} / {game['HomePlayers']['BLK']}`")
-
-                # --- MODO COMPARATIVO DE VALOR (CASINO) ---
-                with st.expander("🧮 Comparativa Automática con el Casino"):
-                    if not game['HasOdds']:
-                        st.warning("⚠️ Sin cuotas oficiales publicadas en ESPN aún.")
-                    
-                    st.markdown(f"**Línea detectada del Casino ({game['Local']} Spread):** `{game['CasinoSpread']}`")
-                    st.markdown(f"**Línea detectada del Casino (Over/Under):** `{game['CasinoOU']}`")
-                    
-                    st.markdown("---")
-                    st.markdown("💡 **Resultado del Análisis de Valor:**")
-                    
-                    # 1. Análisis de Spread
-                    casino_margin_for_home = -1 * game['CasinoSpread'] if game['CasinoSpread'] < 0 else game['CasinoSpread']
-                    diff_spread = game['ProjSpread'] - casino_margin_for_home
-                    
-                    st.markdown("🎯 **Hándicap / Spread:**")
-                    if abs(diff_spread) < 0.8:
-                        st.info("⚖️ **Línea justa en Spread:** El casino está alineado con el modelo.")
-                    elif diff_spread > 0.8:
-                        st.success(f"🔥 **Valor en el Favorito ({game['Local']}):** El modelo proyecta que gana por **{game['ProjSpread']}** pts (superando el hándicap del casino de {casino_margin_for_home} pts).")
-                    else:
-                        st.success(f"🛡️ **Valor en el Underdog ({game['Visitante']}):** El casino pide mucho al local ({casino_margin_for_home} pts). Margen a favor del visitante.")
-
-                    # 2. Análisis de Total (Over/Under)
-                    ou_diff = game['ProjTotal'] - game['CasinoOU']
-                    
-                    st.markdown("🏀 **Totales (Over/Under):**")
-                    if abs(ou_diff) < 1.0:
-                        st.info(f"⚖️ **Línea justa en Total:** Proyección ({game['ProjTotal']}) muy cercana a la línea del casino ({game['CasinoOU']}).")
-                    elif ou_diff < -1.0:
-                        st.success(f"📉 **Valor en el Under:** El casino marcó **{game['CasinoOU']}** pts, pero tu modelo proyecta **{game['ProjTotal']}** pts. Hay valor en el **Under** por **{abs(round(ou_diff, 1))}** puntos.")
-                    else:
-                        st.success(f"📈 **Valor en el Over:** El casino marcó **{game['CasinoOU']}** pts, pero tu modelo proyecta **{game['ProjTotal']}** pts. Hay valor en el **Over** por **{round(ou_diff, 1)}** puntos.")
-
-                st.divider()
-    else:
-        st.info("No hay partidos programados para esta fecha en la NBA.")
+                # Métricas de Puntos (Visit
