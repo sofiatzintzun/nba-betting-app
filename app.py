@@ -10,44 +10,76 @@ st.title("🏀 NBA Schedule & Projections")
 selected_date = st.date_input("Selecciona la fecha del juego", datetime.now())
 date_str = selected_date.strftime("%Y%m%d")
 
-# --- DICCIONARIO BASE DE DATOS DE EQUIPOS ---
+# --- DICCIONARIO BASE DE DATOS DE EQUIPOS (Pace, ORTG, DRTG) ---
 TEAMS_DATA = {
     "Atlanta Hawks": {"Pace": 100.2, "ORTG": 115.0, "DRTG": 116.0},
-    "Orlando Magic": {"Pace": 97.0, "ORTG": 113.5, "DRTG": 108.5},
     "Boston Celtics": {"Pace": 98.5, "ORTG": 118.0, "DRTG": 110.0},
-    "Denver Nuggets": {"Pace": 97.2, "ORTG": 116.5, "DRTG": 112.1},
-    "Los Angeles Lakers": {"Pace": 101.0, "ORTG": 114.2, "DRTG": 113.8},
-    "Golden State Warriors": {"Pace": 100.5, "ORTG": 115.0, "DRTG": 111.5},
-    "Miami Heat": {"Pace": 96.0, "ORTG": 112.0, "DRTG": 109.5},
+    "Brooklyn Nets": {"Pace": 97.8, "ORTG": 111.2, "DRTG": 115.4},
+    "Charlotte Hornets": {"Pace": 98.9, "ORTG": 109.8, "DRTG": 116.2},
+    "Chicago Bulls": {"Pace": 101.1, "ORTG": 112.5, "DRTG": 115.0},
+    "Cleveland Cavaliers": {"Pace": 98.2, "ORTG": 117.2, "DRTG": 110.5},
     "Dallas Mavericks": {"Pace": 99.1, "ORTG": 117.1, "DRTG": 114.0},
+    "Denver Nuggets": {"Pace": 97.2, "ORTG": 116.5, "DRTG": 112.1},
+    "Detroit Pistons": {"Pace": 98.6, "ORTG": 110.1, "DRTG": 114.8},
+    "Golden State Warriors": {"Pace": 100.5, "ORTG": 115.0, "DRTG": 111.5},
+    "Houston Rockets": {"Pace": 99.0, "ORTG": 113.8, "DRTG": 111.2},
+    "Indiana Pacers": {"Pace": 102.3, "ORTG": 118.5, "DRTG": 117.0},
+    "LA Clippers": {"Pace": 97.1, "ORTG": 114.0, "DRTG": 112.0},
+    "Los Angeles Lakers": {"Pace": 101.0, "ORTG": 114.2, "DRTG": 113.8},
+    "Memphis Grizzlies": {"Pace": 100.8, "ORTG": 113.5, "DRTG": 111.8},
+    "Miami Heat": {"Pace": 96.0, "ORTG": 112.0, "DRTG": 109.5},
     "Milwaukee Bucks": {"Pace": 100.2, "ORTG": 116.8, "DRTG": 113.2},
+    "Minnesota Timberwolves": {"Pace": 97.5, "ORTG": 114.5, "DRTG": 108.5},
+    "New Orleans Pelicans": {"Pace": 98.0, "ORTG": 114.2, "DRTG": 113.5},
+    "New York Knicks": {"Pace": 95.8, "ORTG": 117.5, "DRTG": 112.3},
+    "Oklahoma City Thunder": {"Pace": 99.8, "ORTG": 116.2, "DRTG": 111.0},
+    "Orlando Magic": {"Pace": 97.0, "ORTG": 113.5, "DRTG": 108.5},
     "Philadelphia 76ers": {"Pace": 97.8, "ORTG": 115.5, "DRTG": 111.8},
     "Phoenix Suns": {"Pace": 98.2, "ORTG": 116.0, "DRTG": 113.0},
-    "Minnesota Timberwolves": {"Pace": 97.5, "ORTG": 114.5, "DRTG": 108.5},
-    "Oklahoma City Thunder": {"Pace": 99.8, "ORTG": 116.2, "DRTG": 111.0},
-    "New York Knicks": {"Pace": 95.8, "ORTG": 117.5, "DRTG": 112.3},
+    "Portland Trail Blazers": {"Pace": 98.4, "ORTG": 108.9, "DRTG": 115.8},
+    "Sacramento Kings": {"Pace": 99.5, "ORTG": 116.0, "DRTG": 114.5},
+    "San Antonio Spurs": {"Pace": 100.1, "ORTG": 111.0, "DRTG": 113.9},
+    "Toronto Raptors": {"Pace": 99.2, "ORTG": 112.3, "DRTG": 115.1},
+    "Utah Jazz": {"Pace": 99.7, "ORTG": 113.0, "DRTG": 116.5},
+    "Washington Wizards": {"Pace": 102.0, "ORTG": 108.5, "DRTG": 117.8}
 }
 
-# --- DICCIONARIO DE JUGADORES CLAVE POR EQUIPO (PROPS) ---
+# --- DICCIONARIO COMPLETO DE LOS 30 EQUIPOS (LÍDER #1 POR CATEGORÍA) ---
 PLAYERS_PROPS = {
-    "Atlanta Hawks": {"PTS": "N. Alexander-Walker", "AST": "Jalen Johnson", "REB": "Jalen Johnson", "STL": "N. Alexander-Walker", "BLK": "Clint Capela"},
-    "Orlando Magic": {"PTS": "Paolo Banchero", "AST": "Franz Wagner", "REB": "Paolo Banchero", "STL": "Jalen Suggs", "BLK": "Goga Bitadze"},
-    "Boston Celtics": {"PTS": "Jayson Tatum", "AST": "Jrue Holiday", "REB": "Jaylen Brown", "STL": "Derrick White", "BLK": "Kristaps Porzingis"},
-    "Denver Nuggets": {"PTS": "Nikola Jokic", "AST": "Nikola Jokic", "REB": "Nikola Jokic", "STL": "Christian Braun", "BLK": "Aaron Gordon"},
-    "Los Angeles Lakers": {"PTS": "Luka Doncic", "AST": "LeBron James", "REB": "Anthony Davis", "STL": "Austin Reaves", "BLK": "Anthony Davis"},
+    "Atlanta Hawks": {"PTS": "Trae Young", "AST": "Trae Young", "REB": "Jalen Johnson", "STL": "Dyson Daniels", "BLK": "Clint Capela"},
+    "Boston Celtics": {"PTS": "Jayson Tatum", "AST": "Jrue Holiday", "REB": "Jayson Tatum", "STL": "Derrick White", "BLK": "Kristaps Porzingis"},
+    "Brooklyn Nets": {"PTS": "Cam Thomas", "AST": "Dennis Schroder", "REB": "Nic Claxton", "STL": "Ben Simmons", "BLK": "Nic Claxton"},
+    "Charlotte Hornets": {"PTS": "LaMelo Ball", "AST": "LaMelo Ball", "REB": "Miles Bridges", "STL": "LaMelo Ball", "BLK": "Mark Williams"},
+    "Chicago Bulls": {"PTS": "Coby White", "AST": "Josh Giddey", "REB": "Nikola Vucevic", "STL": "Ayo Dosunmu", "BLK": "Nikola Vucevic"},
+    "Cleveland Cavaliers": {"PTS": "Donovan Mitchell", "AST": "Darius Garland", "REB": "Evan Mobley", "STL": "Donovan Mitchell", "BLK": "Evan Mobley"},
+    "Dallas Mavericks": {"PTS": "Luka Doncic", "AST": "Luka Doncic", "REB": "Luka Doncic", "STL": "P.J. Washington", "BLK": "Dereck Lively II"},
+    "Denver Nuggets": {"PTS": "Nikola Jokic", "AST": "Nikola Jokic", "REB": "Nikola Jokic", "STL": "Nikola Jokic", "BLK": "Aaron Gordon"},
+    "Detroit Pistons": {"PTS": "Cade Cunningham", "AST": "Cade Cunningham", "REB": "Jalen Duren", "STL": "Cade Cunningham", "BLK": "Jalen Duren"},
     "Golden State Warriors": {"PTS": "Stephen Curry", "AST": "Draymond Green", "REB": "Kevon Looney", "STL": "Brandin Podziemski", "BLK": "Draymond Green"},
+    "Houston Rockets": {"PTS": "Alperen Sengun", "AST": "Fred VanVleet", "REB": "Alperen Sengun", "STL": "Tari Eason", "BLK": "Amen Thompson"},
+    "Indiana Pacers": {"PTS": "Pascal Siakam", "AST": "Tyrese Haliburton", "REB": "Myles Turner", "STL": "Tyrese Haliburton", "BLK": "Myles Turner"},
+    "LA Clippers": {"PTS": "James Harden", "AST": "James Harden", "REB": "Ivica Zubac", "STL": "Kris Dunn", "BLK": "Ivica Zubac"},
+    "Los Angeles Lakers": {"PTS": "Anthony Davis", "AST": "LeBron James", "REB": "Anthony Davis", "STL": "Austin Reaves", "BLK": "Anthony Davis"},
+    "Memphis Grizzlies": {"PTS": "Ja Morant", "AST": "Ja Morant", "REB": "Jaren Jackson Jr.", "STL": "Marcus Smart", "BLK": "Jaren Jackson Jr."},
     "Miami Heat": {"PTS": "Tyler Herro", "AST": "Jimmy Butler", "REB": "Bam Adebayo", "STL": "Jimmy Butler", "BLK": "Bam Adebayo"},
-    "Dallas Mavericks": {"PTS": "Kyrie Irving", "AST": "Luka Doncic", "REB": "P.J. Washington", "STL": "Naji Marshall", "BLK": "Dereck Lively II"},
     "Milwaukee Bucks": {"PTS": "Giannis Antetokounmpo", "AST": "Damian Lillard", "REB": "Giannis Antetokounmpo", "STL": "Gary Trent Jr.", "BLK": "Brook Lopez"},
+    "Minnesota Timberwolves": {"PTS": "Anthony Edwards", "AST": "Mike Conley", "REB": "Rudy Gobert", "STL": "Nickeil Alexander-Walker", "BLK": "Rudy Gobert"},
+    "New Orleans Pelicans": {"PTS": "Zion Williamson", "AST": "DeJounte Murray", "REB": "Zion Williamson", "STL": "DeJounte Murray", "BLK": "Yves Missi"},
+    "New York Knicks": {"PTS": "Jalen Brunson", "AST": "Jalen Brunson", "REB": "Karl-Anthony Towns", "STL": "Mikal Bridges", "BLK": "Karl-Anthony Towns"},
+    "Oklahoma City Thunder": {"PTS": "Shai Gilgeous-Alexander", "AST": "Shai Gilgeous-Alexander", "REB": "Chet Holmgren", "STL": "Alex Caruso", "BLK": "Chet Holmgren"},
+    "Orlando Magic": {"PTS": "Paolo Banchero", "AST": "Franz Wagner", "REB": "Paolo Banchero", "STL": "Jalen Suggs", "BLK": "Goga Bitadze"},
     "Philadelphia 76ers": {"PTS": "Tyrese Maxey", "AST": "Tyrese Maxey", "REB": "Joel Embiid", "STL": "Kelly Oubre Jr.", "BLK": "Joel Embiid"},
     "Phoenix Suns": {"PTS": "Kevin Durant", "AST": "Devin Booker", "REB": "Jusuf Nurkic", "STL": "Grayson Allen", "BLK": "Kevin Durant"},
-    "Minnesota Timberwolves": {"PTS": "Anthony Edwards", "AST": "Mike Conley", "REB": "Rudy Gobert", "STL": "Nickeil Alexander-Walker", "BLK": "Rudy Gobert"},
-    "Oklahoma City Thunder": {"PTS": "Shai Gilgeous-Alexander", "AST": "Shai Gilgeous-Alexander", "REB": "Chet Holmgren", "STL": "Alex Caruso", "BLK": "Chet Holmgren"},
-    "New York Knicks": {"PTS": "Jalen Brunson", "AST": "Jalen Brunson", "REB": "Karl-Anthony Towns", "STL": "Mikal Bridges", "BLK": "Mitchell Robinson"}
+    "Portland Trail Blazers": {"PTS": "Anfernee Simons", "AST": "Anfernee Simons", "REB": "Deandre Ayton", "STL": "Toumani Camara", "BLK": "Donovan Clingan"},
+    "Sacramento Kings": {"PTS": "De'Aaron Fox", "AST": "Domantas Sabonis", "REB": "Domantas Sabonis", "STL": "De'Aaron Fox", "BLK": "Keegan Murray"},
+    "San Antonio Spurs": {"PTS": "Victor Wembanyama", "AST": "Chris Paul", "REB": "Victor Wembanyama", "STL": "Victor Wembanyama", "BLK": "Victor Wembanyama"},
+    "Toronto Raptors": {"PTS": "RJ Barrett", "AST": "Immanuel Quickley", "REB": "Jakob Poeltl", "STL": "Scottie Barnes", "BLK": "Jakob Poeltl"},
+    "Utah Jazz": {"PTS": "Lauri Markkanen", "AST": "Keyonte George", "REB": "Walker Kessler", "STL": "Collin Sexton", "BLK": "Walker Kessler"},
+    "Washington Wizards": {"PTS": "Jordan Poole", "AST": "Carlton Carrington", "REB": "Jonas Valanciunas", "STL": "Jordan Poole", "BLK": "Alex Sarr"}
 }
 
 DEFAULT_STATS = {"Pace": 99.0, "ORTG": 114.5, "DRTG": 114.5}
-DEFAULT_PLAYER = {"PTS": "Líder Principal", "AST": "Playmaker", "REB": "Rebotero", "STL": "Defensor", "BLK": "Protector Aros"}
+DEFAULT_PLAYER = {"PTS": "Sin registrar", "AST": "Sin registrar", "REB": "Sin registrar", "STL": "Sin registrar", "BLK": "Sin registrar"}
 
 LEAGUE_PACE = 99.0
 LEAGUE_PTS_100 = 114.5
@@ -114,7 +146,7 @@ def get_schedule(date_formatted):
             if casino_ou is None:
                 casino_ou = total_pts
             
-            # Obtener props de jugadores
+            # Obtener props de jugadores con método .get() seguro
             away_players = PLAYERS_PROPS.get(away_team, DEFAULT_PLAYER)
             home_players = PLAYERS_PROPS.get(home_team, DEFAULT_PLAYER)
             
@@ -182,7 +214,7 @@ else:
                 st.caption(f"⚡ **Ritmo:** {game['ProjPace']} pos | 🎯 **Modelo:** {favorite_text}")
                 
                 # --- SECCIÓN FUERA DEL CASINO: JUGADORES CLAVE (PROPS) ---
-                st.markdown("👥 **Jugadores Clave Recomendados (Props):**")
+                st.markdown("👥 **Líderes Clave Recomendados (Props):**")
                 p_col1, p_col2 = st.columns(2)
                 
                 with p_col1:
