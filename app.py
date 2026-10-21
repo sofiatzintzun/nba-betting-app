@@ -1,46 +1,42 @@
 import streamlit as st
-import pandas as pd
 import requests
 
 st.set_page_config(page_title="NBA Schedule App", layout="centered")
 
 st.title("🏀 Calendario NBA de Hoy")
 
-# --- FUNCIÓN CON HEADERS PERSONALIZADOS PARA EVITAR BLOQUEOS ---
+# --- FUNCIÓN PARA OBTENER EL CALENDARIO DESDE LA API DE ESPN ---
 @st.cache_data(ttl=300)
 def get_todays_schedule():
-    url = "https://stats.nba.com/stats/scoreboardv3"
-    
-    # Headers obligatorios para que la API de la NBA no rechace la conexión desde la nube
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept': 'application/json, text/plain, */*',
-        'Accept-Language': 'en-US,en;q=0.9',
-        'Referer': 'https://www.nba.com/',
-        'Origin': 'https://www.nba.com',
-        'Connection': 'keep-alive'
-    }
+    # Endpoint público de la NBA en ESPN (trae los partidos del día actual automáticamente)
+    url = "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard"
     
     try:
-        # Hacemos la petición directa con requests para controlar los headers
-        response = requests.get(url, headers=headers, timeout=10)
+        response = requests.get(url, timeout=10)
         
-        # Verificamos si la petición fue exitosa
         if response.status_code != 200:
-            return f"Error HTTP {response.status_code}: La NBA bloqueó la solicitud."
+            return f"Error HTTP {response.status_code}: No se pudo conectar con ESPN."
             
         data = response.json()
-        
-        # Extraemos los juegos del scoreboardv3
-        games_raw = data.get('scoreboard', {}).get('games', [])
+        events = data.get('events', [])
         
         schedule_list = []
-        for game in games_raw:
-            home_team = f"{game['homeTeam']['teamCity']} {game['homeTeam']['teamName']}"
-            away_team = f"{game['awayTeam']['teamCity']} {game['awayTeam']['teamName']}"
+        for event in events:
+            competition = event['competitions'][0]
+            competitors = competition['competitors']
             
-            # Estado del juego
-            status_text = game.get('gameStatusText', '')
+            # Identificar local y visitante
+            home_team = ""
+            away_team = ""
+            for comp in competitors:
+                team_name = comp['team']['displayName']
+                if comp['homeAway'] == 'home':
+                    home_team = team_name
+                else:
+                    away_team = team_name
+            
+            # Estado del partido (ej. Horario, En vivo, Finalizado)
+            status_text = competition['status']['type']['detail']
             
             schedule_list.append({
                 "Local": home_team,
