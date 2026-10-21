@@ -30,7 +30,7 @@ DEFAULT_STATS = {"Pace": 99.0, "ORTG": 114.5, "DRTG": 114.5}
 LEAGUE_PACE = 99.0
 LEAGUE_PTS_100 = 114.5
 
-# --- FUNCIÓN DE CÁLCULO DE PROYECCIÓN (Incluyendo Pace y Spread) ---
+# --- FUNCIÓN DE CÁLCULO DE PROYECCIÓN ---
 def calculate_projection(away_team, home_team):
     away_stats = TEAMS_DATA.get(away_team, DEFAULT_STATS)
     home_stats = TEAMS_DATA.get(home_team, DEFAULT_STATS)
@@ -81,7 +81,6 @@ def get_schedule(date_formatted):
             
             status_text = competition['status']['type']['detail']
             
-            # Calculamos todas las métricas del modelo
             away_pts, home_pts, total_pts, game_pace, spread = calculate_projection(away_team, home_team)
             
             schedule_list.append({
@@ -138,9 +137,16 @@ else:
                 m2.metric(label=f"Proy. {game['Local'].split()[-1]}", value=game['ProjHome'])
                 m3.metric(label="Total Proyectado", value=game['ProjTotal'])
                 
-                # Línea adicional con el Ritmo y el Spread corregida
-                spread_text = f"Favorito Local por {game['ProjSpread']} pts" if game['ProjSpread'] > 0 else f"Favorito Visitante por {abs(game['ProjSpread'])} pts"
-                st.caption(f"⚡ **Ritmo Estimado:** {game['ProjPace']} posesiones | 🎯 **Spread:** {spread_text}")
+                # Lógica del Spread usando los nombres reales de los equipos
+                if game['ProjSpread'] > 0:
+                    favorite_text = f"Favorito **{game['Local']}** por **{game['ProjSpread']}** pts"
+                elif game['ProjSpread'] < 0:
+                    favorite_text = f"Favorito **{game['Visitante']}** por **{abs(game['ProjSpread'])}** pts"
+                else:
+                    favorite_text = "Partido Empatado (Pick 'em)"
+
+                # Línea adicional con el Ritmo y el Spread con nombre propio
+                st.caption(f"⚡ **Ritmo:** {game['ProjPace']} pos | 🎯 **Spread:** {favorite_text}")
                 
                 st.divider()
     else:
