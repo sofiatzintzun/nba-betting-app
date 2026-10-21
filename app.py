@@ -201,4 +201,23 @@ else:
                     
                     st.markdown("🎯 **Hándicap / Spread:**")
                     if abs(diff_spread) < 0.8:
-                        st.
+                        st.info("⚖️ **Línea justa en Spread:** El casino está alineado con el modelo.")
+                    elif diff_spread > 0.8:
+                        st.success(f"🔥 **Valor en el Favorito ({game['Local']}):** El modelo proyecta que gana por **{game['ProjSpread']}** pts (superando el hándicap del casino de {casino_margin_for_home} pts).")
+                    else:
+                        st.success(f"🛡️ **Valor en el Underdog ({game['Visitante']}):** El casino pide mucho al local ({casino_margin_for_home} pts). Margen a favor del visitante.")
+
+                    # 2. Análisis de Total (Over/Under)
+                    ou_diff = game['ProjTotal'] - game['CasinoOU']
+                    
+                    st.markdown("🏀 **Totales (Over/Under):**")
+                    if abs(ou_diff) < 1.0:
+                        st.info(f"⚖️ **Línea justa en Total:** Proyección ({game['ProjTotal']}) muy cercana a la línea del casino ({game['CasinoOU']}).")
+                    elif ou_diff < -1.0:
+                        st.success(f"📉 **Valor en el Under:** El casino marcó **{game['CasinoOU']}** pts, pero tu modelo proyecta **{game['ProjTotal']}** pts. Hay valor en el **Under** por **{abs(round(ou_diff, 1))}** puntos.")
+                    else:
+                        st.success(f"📈 **Valor en el Over:** El casino marcó **{game['CasinoOU']}** pts, pero tu modelo proyecta **{game['ProjTotal']}** pts. Hay valor en el **Over** por **{round(ou_diff, 1)}** puntos.")
+
+                st.divider()
+    else:
+        st.info("No hay partidos programados para esta fecha en la NBA.")
