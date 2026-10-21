@@ -152,34 +152,41 @@ else:
 
                 st.caption(f"⚡ **Ritmo:** {game['ProjPace']} pos | 🎯 **Modelo:** {favorite_text}")
                 
-                # --- MODO COMPARATIVO DE VALOR CORREGIDO ---
+                # --- MODO COMPARATIVO DE VALOR (SPREAD + TOTAL) ---
                 with st.expander("🧮 Comparativa Automática con el Casino"):
                     if not game['HasOdds']:
                         st.warning("⚠️ Sin cuotas oficiales publicadas en ESPN aún.")
                     
-                    st.markdown(f"**Línea detectada del Casino ({game['Local']}):** `{game['CasinoSpread']}`")
+                    st.markdown(f"**Línea detectada del Casino ({game['Local']} Spread):** `{game['CasinoSpread']}`")
                     st.markdown(f"**Línea detectada del Casino (Over/Under):** `{game['CasinoOU']}`")
-                    
-                    # --- LÓGICA DE VALOR CORREGIDA ---
-                    # Convertimos la línea del casino al margen esperado del local
-                    # Si casino_spread es -3.5, significa que el local debe ganar por +3.5
-                    casino_margin_for_home = -1 * game['CasinoSpread'] if game['CasinoSpread'] < 0 else game['CasinoSpread']
-                    
-                    # Diferencia: Modelo vs Casino
-                    # diff > 0: El modelo le da MÁS ventaja al local que el casino
-                    # diff < 0: El modelo le da MENOS ventaja al local de la que pide el casino
-                    diff = game['ProjSpread'] - casino_margin_for_home
                     
                     st.markdown("---")
                     st.markdown("💡 **Resultado del Análisis de Valor:**")
                     
-                    if abs(diff) < 0.8:
-                        st.info("⚖️ **Línea justa:** El casino está muy alineado con la proyección del modelo.")
-                    elif diff > 0.8:
-                        st.success(f"🔥 **Valor en el Favorito ({game['Local']}):** Tu modelo proyecta que ganará por **{game['ProjSpread']}** pts, superando el handicap del casino ({casino_margin_for_home} pts).")
+                    # 1. Análisis de Spread
+                    casino_margin_for_home = -1 * game['CasinoSpread'] if game['CasinoSpread'] < 0 else game['CasinoSpread']
+                    diff_spread = game['ProjSpread'] - casino_margin_for_home
+                    
+                    st.markdown("🎯 **Hándicap / Spread:**")
+                    if abs(diff_spread) < 0.8:
+                        st.info("⚖️ **Línea justa en Spread:** El casino está alineado con el modelo.")
+                    elif diff_spread > 0.8:
+                        st.success(f"🔥 **Valor en el Favorito ({game['Local']}):** El modelo proyecta que gana por **{game['ProjSpread']}** pts (superando el hándicap del casino de {casino_margin_for_home} pts).")
                     else:
-                        st.success(f"🛡️ **Valor en el Underdog ({game['Visitante']}):** El casino pide demasiado a {game['Local']} ({casino_margin_for_home} pts). Tu modelo proyecta una diferencia de solo **{game['ProjSpread']}** pts (Colchón a favor de {game['Visitante']}).")
-                
+                        st.success(f"🛡️ **Valor en el Underdog ({game['Visitante']}):** El casino pide mucho al local ({casino_margin_for_home} pts). Margen a favor del visitante.")
+
+                    # 2. Análisis de Total (Over/Under)
+                    ou_diff = game['ProjTotal'] - game['CasinoOU']
+                    
+                    st.markdown("🏀 **Totales (Over/Under):**")
+                    if abs(ou_diff) < 1.0:
+                        st.info(f"⚖️ **Línea justa en Total:** Proyección ({game['ProjTotal']}) muy cercana a la línea del casino ({game['CasinoOU']}).")
+                    elif ou_diff < -1.0:
+                        st.success(f"📉 **Valor en el Under:** El casino marcó **{game['CasinoOU']}** pts, pero tu modelo proyecta **{game['ProjTotal']}** pts. Hay valor en el **Under** por **{abs(round(ou_diff, 1))}** puntos.")
+                    else:
+                        st.success(f"📈 **Valor en el Over:** El casino marcó **{game['CasinoOU']}** pts, pero tu modelo proyecta **{game['ProjTotal']}** pts. Hay valor en el **Over** por **{round(ou_diff, 1)}** puntos.")
+
                 st.divider()
     else:
         st.info("No hay partidos programados para esta fecha en la NBA.")
+        
