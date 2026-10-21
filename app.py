@@ -12,6 +12,8 @@ date_str = selected_date.strftime("%Y%m%d")
 
 # --- DICCIONARIO BASE DE DATOS DE EQUIPOS ---
 TEAMS_DATA = {
+    "Atlanta Hawks": {"Pace": 100.2, "ORTG": 115.0, "DRTG": 116.0},
+    "Orlando Magic": {"Pace": 97.0, "ORTG": 113.5, "DRTG": 108.5},
     "Boston Celtics": {"Pace": 98.5, "ORTG": 118.0, "DRTG": 110.0},
     "Denver Nuggets": {"Pace": 97.2, "ORTG": 116.5, "DRTG": 112.1},
     "Los Angeles Lakers": {"Pace": 101.0, "ORTG": 114.2, "DRTG": 113.8},
@@ -26,7 +28,27 @@ TEAMS_DATA = {
     "New York Knicks": {"Pace": 95.8, "ORTG": 117.5, "DRTG": 112.3},
 }
 
+# --- DICCIONARIO DE JUGADORES CLAVE POR EQUIPO (PROPS) ---
+PLAYERS_PROPS = {
+    "Atlanta Hawks": {"PTS": "N. Alexander-Walker", "AST": "Jalen Johnson", "REB": "Jalen Johnson", "STL": "N. Alexander-Walker", "BLK": "Clint Capela"},
+    "Orlando Magic": {"PTS": "Paolo Banchero", "AST": "Franz Wagner", "REB": "Paolo Banchero", "STL": "Jalen Suggs", "BLK": "Goga Bitadze"},
+    "Boston Celtics": {"PTS": "Jayson Tatum", "AST": "Jrue Holiday", "REB": "Jaylen Brown", "STL": "Derrick White", "BLK": "Kristaps Porzingis"},
+    "Denver Nuggets": {"PTS": "Nikola Jokic", "AST": "Nikola Jokic", "REB": "Nikola Jokic", "STL": "Christian Braun", "BLK": "Aaron Gordon"},
+    "Los Angeles Lakers": {"PTS": "Luka Doncic", "AST": "LeBron James", "REB": "Anthony Davis", "STL": "Austin Reaves", "BLK": "Anthony Davis"},
+    "GoldenState Warriors": {"PTS": "Stephen Curry", "AST": "Draymond Green", "REB": "Kevon Looney", "STL": "Brandin Podziemski", "BLK": "Draymond Green"},
+    "Miami Heat": {"PTS": "Tyler Herro", "AST": "Jimmy Butler", "REB": "Bam Adebayo", "STL": "Jimmy Butler", "BLK": "Bam Adebayo"},
+    "Dallas Mavericks": {"PTS": "Kyrie Irving", "AST": "Luka Doncic", "REB": "P.J. Washington", "STL": "Naji Marshall", "BLK": "Dereck Lively II"},
+    "Milwaukee Bucks": {"PTS": "Giannis Antetokounmpo", "AST": "Damian Lillard", "REB": "Giannis Antetokounmpo", "AST_DEF": "Brook Lopez", "BLK": "Brook Lopez"},
+    "Philadelphia 76ers": {"PTS": "Tyrese Maxey", "AST": "Tyrese Maxey", "REB": "Joel Embiid", "STL": "Kelly Oubre Jr.", "BLK": "Joel Embiid"},
+    "Phoenix Suns": {"PTS": "Kevin Durant", "AST": "Devin Booker", "REB": "Jusuf Nurkic", "STL": "Grayson Allen", "BLK": "Kevin Durant"},
+    "Minnesota Timberwolves": {"PTS": "Anthony Edwards", "AST": "Mike Conley", "REB": "Rudy Gobert", "STL": "Nickeil Alexander-Walker", "BLK": "Rudy Gobert"},
+    "Oklahoma City Thunder": {"PTS": "Shai Gilgeous-Alexander", "AST": "Shai Gilgeous-Alexander", "REB": "Chet Holmgren", "STL": "Alex Caruso", "BLK": "Chet Holmgren"},
+    "New York Knicks": {"PTS": "Jalen Brunson", "AST": "Jalen Brunson", "REB": "Karl-Anthony Towns", "STL": "Mikal Bridges", "BLK": "Mitchell Robinson"}
+}
+
 DEFAULT_STATS = {"Pace": 99.0, "ORTG": 114.5, "DRTG": 114.5}
+DEFAULT_PLAYER = {"PTS": "Líder Principal", "AST": "Playmaker", "REB": "Rebotero", "STL": "Ladrón", "BLK": "Protector Aros"}
+
 LEAGUE_PACE = 99.0
 LEAGUE_PTS_100 = 114.5
 
@@ -92,6 +114,10 @@ def get_schedule(date_formatted):
             if casino_ou is None:
                 casino_ou = total_pts
             
+            # Obtener props de jugadores (con respaldo por defecto si el equipo no está listado)
+            away_players = PLAYERS_PROPS.get(away_team, DEFAULT_PLAYER)
+            home_players = PLAYERS_PROPS.get(home_team, DEFAULT_PLAYER)
+            
             schedule_list.append({
                 "Local": home_team,
                 "LocalLogo": home_logo,
@@ -105,7 +131,9 @@ def get_schedule(date_formatted):
                 "ProjSpread": model_spread,
                 "CasinoSpread": float(casino_spread),
                 "CasinoOU": float(casino_ou),
-                "HasOdds": len(odds_data) > 0
+                "HasOdds": len(odds_data) > 0,
+                "AwayPlayers": away_players,
+                "HomePlayers": home_players
             })
             
         return schedule_list
@@ -137,6 +165,7 @@ else:
                 
                 st.caption(f"🕒 Estado: {game['Estado']}")
                 
+                # Métricas de Puntos (Visitante, Local, Total)
                 m1, m2, m3 = st.columns(3)
                 m1.metric(label=f"Proy. {game['Visitante'].split()[-1]}", value=game['ProjAway'])
                 m2.metric(label=f"Proy. {game['Local'].split()[-1]}", value=game['ProjHome'])
@@ -152,7 +181,25 @@ else:
 
                 st.caption(f"⚡ **Ritmo:** {game['ProjPace']} pos | 🎯 **Modelo:** {favorite_text}")
                 
-                # --- MODO COMPARATIVO DE VALOR (SPREAD + TOTAL) ---
+                # --- SECCIÓN FUERA DEL CASINO: JUGADORES CLAVE (PROPS) ---
+                st.markdown("👥 **Jugadores Clave Recomendados (Props):**")
+                p_col1, p_col2 = st.columns(2)
+                
+                with p_col1:
+                    st.markdown(f"**{game['Visitante']}**")
+                    st.markdown(f"• 🏀 Puntos: `{game['AwayPlayers']['PTS']}`")
+                    st.markdown(f"• 🎯 Asistencias: `{game['AwayPlayers']['AST']}`")
+                    st.markdown(f"• 🛡️ Rebotes: `{game['AwayPlayers']['REB']}`")
+                    st.markdown(f"• 🛑 Robos/Bloq: `{game['AwayPlayers']['STL']} / {game['AwayPlayers']['BLK']}`")
+                    
+                with p_col2:
+                    st.markdown(f"**{game['Local']}**")
+                    st.markdown(f"• 🏀 Puntos: `{game['HomePlayers']['PTS']}`")
+                    st.markdown(f"• 🎯 Asistencias: `{game['HomePlayers']['AST']}`")
+                    st.markdown(f"• 🛡️ Rebotes: `{game['HomePlayers']['REB']}`")
+                    st.markdown(f"• 🛑 Robos/Bloq: `{game['HomePlayers']['STL']} / {game['HomePlayers']['BLK']}`")
+
+                # --- MODO COMPARATIVO DE VALOR (CASINO) ---
                 with st.expander("🧮 Comparativa Automática con el Casino"):
                     if not game['HasOdds']:
                         st.warning("⚠️ Sin cuotas oficiales publicadas en ESPN aún.")
@@ -189,4 +236,3 @@ else:
                 st.divider()
     else:
         st.info("No hay partidos programados para esta fecha en la NBA.")
-        
